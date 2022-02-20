@@ -8,6 +8,7 @@ COPY src /build/src
 COPY settings.gradle /build
 
 RUN gradle shadowJar
+RUN echo Files
 RUN ls -l /build/build/libs
 
 FROM openjdk:17
