@@ -1,0 +1,16 @@
+plugins {
+    id 'com.github.johnrengelman.shadow' version '6.1.0'
+    id 'java'
+    id "maven-publish"
+    id 'java-library'
+}
+
+apply from: 'https://raw.githubusercontent.com/UnRealDinnerbone/GradleHelpers/helpers/base.gradle'
+apply from: 'https://raw.githubusercontent.com/UnRealDinnerbone/GradleHelpers/helpers/shade.gradle'
+
+dependencies {
+    shade('com.unrealdinnerbone:UnRealConfig:4.0.0+build.36')
+    shade('com.unrealdinnerbone:UnRealLib:3.2.0+build.97')
+    shade('io.javalin:javalin:4.3.0')
+    shade 'com.google.guava:guava:31.0.1-jre'
+}
