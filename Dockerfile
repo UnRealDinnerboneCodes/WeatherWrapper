@@ -1,10 +1,10 @@
 FROM gradle:7.3.1-jdk17 as builder
 
-WORKDIR /build
+WORKDIR /WeatherWrapper
 
-COPY build.gradle /build
-COPY gradle.properties /build
-COPY src /build/src
+COPY build.gradle /WeatherWrapper
+COPY gradle.properties /WeatherWrapper
+COPY src /WeatherWrapper/src
 
 RUN gradle shadowJar
 
