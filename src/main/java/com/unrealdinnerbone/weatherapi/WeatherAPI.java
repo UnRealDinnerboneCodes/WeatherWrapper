@@ -62,6 +62,7 @@ public class WeatherAPI {
     private static final Logger LOGGER = LoggerFactory.getLogger("WeatherAPI");
 
     public static void main(String[] args) {
+        LOGGER.info("Starting WeatherAPI");
         Javalin app = Javalin.create(javalinConfig -> {
             javalinConfig.showJavalinBanner = false;
         }).start(1001);
