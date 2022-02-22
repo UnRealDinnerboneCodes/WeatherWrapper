@@ -1,18 +1,9 @@
 package com.unrealdinnerbone.weatherapi.base;
 
 import com.unrealdinnerbone.weatherapi.base.api.IProperties;
+import com.unrealdinnerbone.weatherapi.base.properties.Alert;
 
 import java.util.List;
 import java.util.Objects;
 
-public class FeatureCollection<P extends IProperties> {
-    private final List<Feature<P>> features;
-
-    public FeatureCollection(List<Feature<P>> features) {
-        this.features = features;
-    }
-
-    public List<Feature<P>> features() {
-        return features;
-    }
-}
+public record FeatureCollection(List<Feature> features) {}

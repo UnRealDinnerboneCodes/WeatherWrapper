@@ -80,7 +80,7 @@ public class WeatherAPI {
                     try {
                         String response = httpClient.send(request, HttpResponse.BodyHandlers.ofString()).body();
                         LOGGER.info("Response  Null ? {}", response == null || response.isEmpty());
-                        AlertCollection alertFeatureCollection = JsonUtil.DEFAULT.parse(AlertCollection.class, response);
+                        FeatureCollection alertFeatureCollection = JsonUtil.DEFAULT.parse(FeatureCollection.class, response);
                         List<String> activeAlerts = alertFeatureCollection.features().stream()
                                 .map(Feature::properties)
                                 .map(Alert::event)
@@ -110,12 +110,6 @@ public class WeatherAPI {
     }
 
 
-    public static class AlertCollection extends FeatureCollection<Alert> {
-
-        public AlertCollection(List<Feature<Alert>> features) {
-            super(features);
-        }
-    }
 
 }
 

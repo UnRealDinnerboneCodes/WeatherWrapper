@@ -1,5 +1,5 @@
 package com.unrealdinnerbone.weatherapi.base;
 
-import com.unrealdinnerbone.weatherapi.base.api.IProperties;
+import com.unrealdinnerbone.weatherapi.base.properties.Alert;
 
-public record Feature<P extends IProperties>(String id, String type, P properties) {}
+public record Feature(String id, String type, Alert properties) {}
