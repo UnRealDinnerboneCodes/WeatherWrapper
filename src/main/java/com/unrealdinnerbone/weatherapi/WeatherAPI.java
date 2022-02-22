@@ -77,16 +77,21 @@ public class WeatherAPI {
                             .setHeader("User-Agent", "WeatherAPI-Wrapper (unrealdinnerbone@gmail.com)")
                             .GET().uri(URI.create("https://api.weather.gov/alerts/active?zone=" + zone)).build();
 
-                    String response = httpClient.send(request, HttpResponse.BodyHandlers.ofString()).body();
-                    LOGGER.info("Response: {}", response);
-                    FeatureCollection<Alert> alertFeatureCollection = JsonUtil.DEFAULT.parse(AlertCollection.class, response);
+                    try {
+                        String response = httpClient.send(request, HttpResponse.BodyHandlers.ofString()).body();
+                        LOGGER.info("Response: {}", response);
+                        FeatureCollection<Alert> alertFeatureCollection = JsonUtil.DEFAULT.parse(AlertCollection.class, response);
+                        List<String> activeAlerts = alertFeatureCollection.features().stream()
+                                .map(Feature::properties)
+                                .map(Alert::event)
+                                .map(WeatherAPI::toCamelCase)
+                                .toList();
+                        return JsonUtil.DEFAULT.toJson(AlertData.class, new AlertData(TYPES.stream().collect(Collectors.toMap(type -> type, activeAlerts::contains, (a, b) -> b))));
+                    }catch(Exception e) {
+                        LOGGER.error("Error while requesting alerts", e);
+                        return JsonUtil.DEFAULT.toJson(AlertData.class, new AlertData(TYPES.stream().collect(Collectors.toMap(type -> type, type -> false))));
+                    }
 
-                    List<String> activeAlerts = alertFeatureCollection.features().stream()
-                            .map(Feature::properties)
-                            .map(Alert::event)
-                            .map(WeatherAPI::toCamelCase)
-                            .toList();
-                    return JsonUtil.DEFAULT.toJson(AlertData.class, new AlertData(TYPES.stream().collect(Collectors.toMap(type -> type, activeAlerts::contains, (a, b) -> b))));
                 }));
             }else {
                 ctx.result("No Zone");
