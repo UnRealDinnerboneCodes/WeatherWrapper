@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public final class Alert {
-    private final String event;
+public class Alert {
+    public String event;
 
     public Alert(String event) {
         this.event = event;

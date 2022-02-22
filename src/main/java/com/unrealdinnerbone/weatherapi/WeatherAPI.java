@@ -100,7 +100,7 @@ public class WeatherAPI {
     }
 
     public static final class AlertData {
-        private final Map<String, Boolean> alerts;
+        public Map<String, Boolean> alerts;
 
         public AlertData(Map<String, Boolean> alerts) {
             this.alerts = alerts;

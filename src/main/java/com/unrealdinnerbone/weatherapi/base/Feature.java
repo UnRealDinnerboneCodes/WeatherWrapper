@@ -4,8 +4,8 @@ import com.unrealdinnerbone.weatherapi.base.properties.Alert;
 
 import java.util.Objects;
 
-public final class Feature {
-    private final Alert properties;
+public class Feature {
+    public Alert properties;
 
     public Feature(Alert properties) {
         this.properties = properties;
