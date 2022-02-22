@@ -14,10 +14,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -101,7 +98,18 @@ public class WeatherAPI {
 
     }
 
-    public static record AlertData(Map<String, Boolean> alerts) {}
+    public static final class AlertData {
+        private final Map<String, Boolean> alerts;
+
+        public AlertData(Map<String, Boolean> alerts) {
+            this.alerts = alerts;
+        }
+
+        public Map<String, Boolean> alerts() {
+            return alerts;
+        }
+
+    }
 
     public static String toCamelCase(String s){
         return Arrays.stream(s.split(" "))

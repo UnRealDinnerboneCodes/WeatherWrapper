@@ -6,6 +6,36 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
-public record Alert(String event) {
+public final class Alert {
+    private final String event;
+
+    public Alert(String event) {
+        this.event = event;
+    }
+
+    public String event() {
+        return event;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj == this) return true;
+        if(obj == null || obj.getClass() != this.getClass()) return false;
+        var that = (Alert) obj;
+        return Objects.equals(this.event, that.event);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(event);
+    }
+
+    @Override
+    public String toString() {
+        return "Alert[" +
+                "event=" + event + ']';
+    }
+
 }
