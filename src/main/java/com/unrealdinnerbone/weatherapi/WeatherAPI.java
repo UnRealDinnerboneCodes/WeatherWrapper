@@ -25,7 +25,7 @@ public class WeatherAPI {
 
 
     private static final Cache<String, String> pages = CacheBuilder.newBuilder()
-            .expireAfterWrite(1, TimeUnit.MINUTES)
+            .expireAfterWrite(5, TimeUnit.MINUTES)
             .build();
 
     private static final List<String> TYPES = new ArrayList<>();
@@ -77,7 +77,9 @@ public class WeatherAPI {
                             .setHeader("User-Agent", "WeatherAPI-Wrapper (unrealdinnerbone@gmail.com)")
                             .GET().uri(URI.create("https://api.weather.gov/alerts/active?zone=" + zone)).build();
 
-                    FeatureCollection<Alert> alertFeatureCollection = JsonUtil.DEFAULT.parse(AlertCollection.class, httpClient.send(request, HttpResponse.BodyHandlers.ofString()).body());
+                    String response = httpClient.send(request, HttpResponse.BodyHandlers.ofString()).body();
+                    LOGGER.info("Response: {}", response);
+                    FeatureCollection<Alert> alertFeatureCollection = JsonUtil.DEFAULT.parse(AlertCollection.class, response);
 
                     List<String> activeAlerts = alertFeatureCollection.features().stream()
                             .map(Feature::properties)
