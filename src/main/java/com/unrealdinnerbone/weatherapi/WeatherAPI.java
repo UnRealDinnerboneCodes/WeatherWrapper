@@ -79,8 +79,8 @@ public class WeatherAPI {
 
                     try {
                         String response = httpClient.send(request, HttpResponse.BodyHandlers.ofString()).body();
-                        LOGGER.info("Response: {}", response);
-                        FeatureCollection<Alert> alertFeatureCollection = JsonUtil.DEFAULT.parse(AlertCollection.class, response);
+                        LOGGER.info("Response  Null ? {}", response == null || response.isEmpty());
+                        AlertCollection alertFeatureCollection = JsonUtil.DEFAULT.parse(AlertCollection.class, response);
                         List<String> activeAlerts = alertFeatureCollection.features().stream()
                                 .map(Feature::properties)
                                 .map(Alert::event)
