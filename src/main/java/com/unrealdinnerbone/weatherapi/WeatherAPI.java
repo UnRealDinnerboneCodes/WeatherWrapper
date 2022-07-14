@@ -2,6 +2,7 @@ package com.unrealdinnerbone.weatherapi;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.squareup.moshi.Json;
 import com.unrealdinnerbone.unreallib.json.JsonUtil;
 import com.unrealdinnerbone.weatherapi.base.Feature;
 import com.unrealdinnerbone.weatherapi.base.FeatureCollection;
@@ -22,10 +23,11 @@ public class WeatherAPI {
 
 
     private static final Cache<String, String> pages = CacheBuilder.newBuilder()
-            .expireAfterWrite(5, TimeUnit.MINUTES)
+            .expireAfterWrite(1, TimeUnit.MINUTES)
             .build();
 
     private static final List<String> TYPES = new ArrayList<>();
+    private static final List<String> ALERT_TYPES = new ArrayList<>();
 
     static {
         TYPES.add("BlizzardWarning");
@@ -40,10 +42,8 @@ public class WeatherAPI {
         TYPES.add("FrostAdvisory");
         TYPES.add("GaleWarning");
         TYPES.add("HeatAdvisory");
-        TYPES.add("FreezeWarning");
         TYPES.add("HighWindWarning");
         TYPES.add("HighWindWatch");
-        TYPES.add("FreezeWarning");
         TYPES.add("SevereThunderstormWarning");
         TYPES.add("SevereThunderstormWatch");
         TYPES.add("TornadoWarning");
@@ -54,6 +54,16 @@ public class WeatherAPI {
         TYPES.add("WinterStormWarning");
         TYPES.add("WinterStormWatch");
         TYPES.add("WinterWeatherAdvisory");
+
+
+        ALERT_TYPES.add("Blizzard");
+        ALERT_TYPES.add("ExcessiveHeat");
+        ALERT_TYPES.add("FlashFlood");
+        ALERT_TYPES.add("Freeze");
+        ALERT_TYPES.add("HighWind");
+        ALERT_TYPES.add("SevereThunderstorm");
+        ALERT_TYPES.add("Tornado");
+        ALERT_TYPES.add("WinterStorm");
     }
 
 
@@ -84,10 +94,24 @@ public class WeatherAPI {
                                 .map(Alert::event)
                                 .map(WeatherAPI::toCamelCase)
                                 .toList();
-                        return JsonUtil.DEFAULT.toJson(AlertData.class, new AlertData(TYPES.stream().collect(Collectors.toMap(type -> type, activeAlerts::contains, (a, b) -> b))));
+
+                        Map<String, Level> levelMap = new HashMap<>();
+                        for(String alertType : ALERT_TYPES) {
+                            String warning = alertType + "Warning";
+                            String watch = alertType + "Watch";
+                            if(activeAlerts.contains(warning)) {
+                                levelMap.put(alertType, Level.WARNING);
+                            } else if(activeAlerts.contains(watch)) {
+                                levelMap.put(alertType, Level.WATCH);
+                            } else {
+                                levelMap.put(alertType, Level.NONE);
+                            }
+                        }
+
+                        return JsonUtil.DEFAULT.toJson(AlertData.class, new AlertData(TYPES.stream().collect(Collectors.toMap(type -> type, activeAlerts::contains, (a, b) -> b)), levelMap));
                     }catch(Exception e) {
                         LOGGER.error("Error while requesting alerts", e);
-                        return JsonUtil.DEFAULT.toJson(AlertData.class, new AlertData(TYPES.stream().collect(Collectors.toMap(type -> type, type -> false))));
+                        return JsonUtil.DEFAULT.toJson(AlertData.class, new AlertData(TYPES.stream().collect(Collectors.toMap(type -> type, type -> false)),  ALERT_TYPES.stream().collect(Collectors.toMap(type -> type, type -> Level.NONE))));
                     }
 
                 }));
@@ -99,17 +123,17 @@ public class WeatherAPI {
 
     }
 
-    public static final class AlertData {
-        public Map<String, Boolean> alerts;
+    public static record AlertData(Map<String, Boolean> alerts, Map<String, Level> levels) {
 
-        public AlertData(Map<String, Boolean> alerts) {
-            this.alerts = alerts;
-        }
+    }
 
-        public Map<String, Boolean> alerts() {
-            return alerts;
-        }
-
+    public enum Level {
+        @Json(name = "warning")
+        WARNING,
+        @Json(name = "watch")
+        WATCH,
+        @Json(name = "none")
+        NONE
     }
 
     public static String toCamelCase(String s){
