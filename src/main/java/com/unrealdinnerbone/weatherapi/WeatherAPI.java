@@ -5,6 +5,7 @@ import com.google.common.cache.CacheBuilder;
 import com.squareup.moshi.Json;
 import com.unrealdinnerbone.unreallib.LogHelper;
 import com.unrealdinnerbone.unreallib.StringUtils;
+import com.unrealdinnerbone.unreallib.TaskScheduler;
 import com.unrealdinnerbone.unreallib.json.JsonUtil;
 import com.unrealdinnerbone.weatherapi.base.Feature;
 import com.unrealdinnerbone.weatherapi.base.FeatureCollection;
@@ -30,6 +31,10 @@ public class WeatherAPI {
 
     private static final List<String> TYPES = new ArrayList<>();
     private static final List<String> ALERT_TYPES = new ArrayList<>();
+
+    private static final List<String> ZONES = new ArrayList<>();
+
+    private static final Map<String, String> WEATHER_ZONES = new HashMap<>();
 
     static {
         TYPES.add("BlizzardWarning");
@@ -66,6 +71,9 @@ public class WeatherAPI {
         ALERT_TYPES.add("SevereThunderstorm");
         ALERT_TYPES.add("Tornado");
         ALERT_TYPES.add("WinterStorm");
+
+        ZONES.addAll(Arrays.asList(System.getenv().getOrDefault("ZONES", "").split(",")));
+        ZONES.removeIf(String::isEmpty);
     }
 
 
@@ -77,33 +85,33 @@ public class WeatherAPI {
         Javalin app = Javalin.create(javalinConfig -> {
             javalinConfig.showJavalinBanner = false;
         }).start(1001);
-        app.get("v2/alerts/{zone}", ctx -> {
-
-        });
+        TaskScheduler.scheduleRepeatingTask(5, TimeUnit.MINUTES, (task) -> updateWeather());
         app.get("v1/alerts/{zone}", ctx -> {
             String zone = ctx.pathParam("zone");
             if(!zone.isEmpty()) {
-                LOGGER.info("Requested Alerts for {} from {} - {}", zone, ctx.ip(), ctx.userAgent());
-                try {
-                    ctx.result(pages.get(zone, () -> {
-                        AlertData data = getAlertData(zone);
-                        if(data != null) {
-                            return JsonUtil.DEFAULT.toFancyJson(AlertData.class, data);
-                        }else {
-                            throw new RuntimeException("No Data");
-                        }
-                    }));
-                }catch (Exception e) {
-                    LOGGER.error("Error while requesting alerts", e);
-                    ctx.status(500).result(JsonUtil.DEFAULT.toJson(AlertData.class, new AlertData(TYPES.stream().collect(Collectors.toMap(type -> type, type -> false)),  ALERT_TYPES.stream().collect(Collectors.toMap(type -> type, type -> Level.NONE)))));
+                if(WEATHER_ZONES.containsKey(zone)) {
+                    ctx.result(WEATHER_ZONES.get(zone));
+                }else {
+                    ctx.result(JsonUtil.DEFAULT.toJson(AlertData.class, new AlertData(TYPES.stream().collect(Collectors.toMap(type -> type, type -> false)),  ALERT_TYPES.stream().collect(Collectors.toMap(type -> type, type -> Level.NONE)))));
                 }
             }else {
-                JsonUtil.DEFAULT.toJson(AlertData.class, new AlertData(TYPES.stream().collect(Collectors.toMap(type -> type, type -> false)),  ALERT_TYPES.stream().collect(Collectors.toMap(type -> type, type -> Level.NONE))));
                 ctx.result("No Zone");
             }
         });
 
 
+    }
+
+    public static void updateWeather() {
+        LOGGER.info("Updating Weather");
+        for (String zone : ZONES) {
+            AlertData alertData = getAlertData(zone);
+            if(alertData != null) {
+                String json = JsonUtil.DEFAULT.toFancyJson(AlertData.class, alertData);
+                LOGGER.info("Updating Zone: {} with Data: {}", zone, json);
+                WEATHER_ZONES.put(zone, json);
+            }
+        }
     }
 
 
