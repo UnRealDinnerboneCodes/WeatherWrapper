@@ -77,47 +77,20 @@ public class WeatherAPI {
         Javalin app = Javalin.create(javalinConfig -> {
             javalinConfig.showJavalinBanner = false;
         }).start(1001);
+        app.get("v2/alerts/{zone}", ctx -> {
+
+        });
         app.get("v1/alerts/{zone}", ctx -> {
             String zone = ctx.pathParam("zone");
             if(!zone.isEmpty()) {
                 LOGGER.info("Requested Alerts for {} from {} - {}", zone, ctx.ip(), ctx.userAgent());
                 try {
                     ctx.result(pages.get(zone, () -> {
-                        HttpRequest request = HttpRequest.newBuilder()
-                                .setHeader("User-Agent", "WeatherAPI-Wrapper (unrealdinnerbone@gmail.com)")
-                                .GET().uri(URI.create("https://api.weather.gov/alerts/active?zone=" + zone)).build();
-
-                        try {
-                            String response = httpClient.send(request, HttpResponse.BodyHandlers.ofString()).body();
-                            LOGGER.info("Response  Null ? {}", response == null || response.isEmpty());
-                            FeatureCollection alertFeatureCollection = JsonUtil.DEFAULT.parse(FeatureCollection.class, response);
-                            List<String> activeAlerts = alertFeatureCollection.features().stream()
-                                    .map(Feature::properties)
-                                    .map(Alert::event)
-                                    .map(StringUtils::toCamelCase)
-                                    .toList();
-
-                            Map<String, Level> levelMap = new HashMap<>();
-                            for(String alertType : ALERT_TYPES) {
-                                String warning = alertType + "Warning";
-                                String watch = alertType + "Watch";
-                                if(activeAlerts.contains(warning)) {
-                                    levelMap.put(alertType, Level.WARNING);
-                                } else if(activeAlerts.contains(watch)) {
-                                    levelMap.put(alertType, Level.WATCH);
-                                } else {
-                                    levelMap.put(alertType, Level.NONE);
-                                }
-                            }
-
-                            if(true) {
-                                throw new RuntimeException("Test");
-                            }
-
-                            return JsonUtil.DEFAULT.toJson(AlertData.class, new AlertData(TYPES.stream().collect(Collectors.toMap(type -> type, activeAlerts::contains, (a, b) -> b)), levelMap));
-                        }catch(Exception e) {
-                            LOGGER.error("Error while requesting alerts", e);
-                            throw e;
+                        AlertData data = getAlertData(zone);
+                        if(data != null) {
+                            return JsonUtil.DEFAULT.toFancyJson(AlertData.class, data);
+                        }else {
+                            throw new RuntimeException("No Data");
                         }
                     }));
                 }catch (Exception e) {
@@ -131,6 +104,40 @@ public class WeatherAPI {
         });
 
 
+    }
+
+
+    public static AlertData getAlertData(String zone) {
+        HttpRequest request = HttpRequest.newBuilder()
+                .setHeader("User-Agent", "WeatherAPI-Wrapper (unrealdinnerbone@gmail.com)")
+                .GET().uri(URI.create("https://api.weather.gov/alerts/active?zone=" + zone)).build();
+        try {
+            String response = httpClient.send(request, HttpResponse.BodyHandlers.ofString()).body();
+            LOGGER.info("Response  Null ? {}", response == null || response.isEmpty());
+            FeatureCollection alertFeatureCollection = JsonUtil.DEFAULT.parse(FeatureCollection.class, response);
+            List<String> activeAlerts = alertFeatureCollection.features().stream()
+                    .map(Feature::properties)
+                    .map(Alert::event)
+                    .map(StringUtils::toCamelCase)
+                    .toList();
+
+            Map<String, Level> levelMap = new HashMap<>();
+            for(String alertType : ALERT_TYPES) {
+                String warning = alertType + "Warning";
+                String watch = alertType + "Watch";
+                if(activeAlerts.contains(warning)) {
+                    levelMap.put(alertType, Level.WARNING);
+                } else if(activeAlerts.contains(watch)) {
+                    levelMap.put(alertType, Level.WATCH);
+                } else {
+                    levelMap.put(alertType, Level.NONE);
+                }
+            }
+            return new AlertData(TYPES.stream().collect(Collectors.toMap(type -> type, activeAlerts::contains, (a, b) -> b)), levelMap);
+        }catch(Exception e) {
+            LOGGER.error("Error while requesting alerts", e);
+            return null;
+        }
     }
 
     public static record AlertData(Map<String, Boolean> alerts, Map<String, Level> levels) {
