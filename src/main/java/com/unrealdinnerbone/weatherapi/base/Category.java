@@ -1,31 +1,32 @@
 package com.unrealdinnerbone.weatherapi.base;
 
-import com.squareup.moshi.Json;
+
+import com.google.gson.annotations.SerializedName;
 
 public enum Category
 {
-    @Json(name = "Met")
+    @SerializedName("Met")
     MET,
-    @Json(name = "Geo")
+    @SerializedName("Geo")
     GEO,
-    @Json(name = "Safety")
+    @SerializedName("Safety")
     SAFETY,
-    @Json(name = "Security")
+    @SerializedName("Security")
     SECURITY,
-    @Json(name = "Rescue")
+    @SerializedName("Rescue")
     RESCUE,
-    @Json(name = "Fire")
+    @SerializedName("Fire")
     FIRE,
-    @Json(name = "Health")
+    @SerializedName("Health")
     HEALTH,
-    @Json(name = "Env")
+    @SerializedName("Env")
     ENV,
-    @Json(name = "Transport")
+    @SerializedName("Transport")
     TRANSPORT,
-    @Json(name = "Infra")
+    @SerializedName("Infra")
     INFRA,
-    @Json(name = "CBRNE")
+    @SerializedName("CBRNE")
     CBRNE,
-    @Json(name = "Other")
+    @SerializedName("Other")
     OTHER
 }

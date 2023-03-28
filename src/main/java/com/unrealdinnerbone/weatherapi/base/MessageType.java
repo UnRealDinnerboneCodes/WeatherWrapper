@@ -1,17 +1,17 @@
 package com.unrealdinnerbone.weatherapi.base;
 
-import com.squareup.moshi.Json;
+import com.google.gson.annotations.SerializedName;
 
 public enum MessageType
 {
-    @Json(name = "Alert")
+    @SerializedName("Alert")
     ALERT,
-    @Json(name = "Update")
+    @SerializedName("Update")
     UPDATE,
-    @Json(name = "Cancel")
+    @SerializedName("Cancel")
     CANCEL,
-    @Json(name = "ACk")
+    @SerializedName("ACk")
     ACK,
-    @Json(name = "Error")
+    @SerializedName("Error")
     ERROR;
 }

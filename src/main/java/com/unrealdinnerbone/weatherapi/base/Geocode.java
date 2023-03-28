@@ -1,9 +1,9 @@
 package com.unrealdinnerbone.weatherapi.base;
 
-import com.squareup.moshi.Json;
+import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
 
-public record Geocode(@Json(name = "SAME") List<String> same, @Json(name = "UGC")  List<String> ugc) {
+public record Geocode(@SerializedName("SAME") List<String> same, @SerializedName("UGC")  List<String> ugc) {
 
 }

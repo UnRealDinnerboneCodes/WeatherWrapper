@@ -1,19 +1,18 @@
 package com.unrealdinnerbone.weatherapi.base;
 
-import com.squareup.moshi.Json;
-import com.unrealdinnerbone.unreallib.StringUtils;
+import com.google.gson.annotations.SerializedName;
 
 public enum Status {
 
-    @Json(name = "Actual")
+    @SerializedName("Actual")
     ACTUAL,
-    @Json(name = "Exercise")
+    @SerializedName("Exercise")
     EXERCISE,
-    @Json(name = "System")
+    @SerializedName("System")
     SYSTEM,
-    @Json(name = "Test")
+    @SerializedName("Test")
     TEST,
-    @Json(name = "Draft")
+    @SerializedName("Draft")
     DRAFT
     ;
 

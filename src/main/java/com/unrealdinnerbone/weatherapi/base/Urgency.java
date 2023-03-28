@@ -1,17 +1,17 @@
 package com.unrealdinnerbone.weatherapi.base;
 
-import com.squareup.moshi.Json;
+import com.google.gson.annotations.SerializedName;
 
 public enum Urgency {
-    @Json(name = "Immediate")
+    @SerializedName("Immediate")
     IMMEDIATE,
-    @Json(name = "Expected")
+    @SerializedName("Expected")
     EXPECTED,
-    @Json(name = "Future")
+    @SerializedName("Future")
     FUTURE,
-    @Json(name = "Past")
+    @SerializedName("Past")
     PAST,
-    @Json(name = "Unknown")
+    @SerializedName("Unknown")
     UNKNOWN;
 
 }

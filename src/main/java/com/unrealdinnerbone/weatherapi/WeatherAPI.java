@@ -2,10 +2,12 @@ package com.unrealdinnerbone.weatherapi;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.squareup.moshi.Json;
+import com.google.gson.annotations.SerializedName;
+import com.unrealdinnerbone.config.ConfigManager;
 import com.unrealdinnerbone.unreallib.LogHelper;
 import com.unrealdinnerbone.unreallib.StringUtils;
-import com.unrealdinnerbone.unreallib.TaskScheduler;
+import com.unrealdinnerbone.unreallib.apiutils.APIUtils;
+import com.unrealdinnerbone.unreallib.apiutils.IResult;
 import com.unrealdinnerbone.unreallib.json.JsonUtil;
 import com.unrealdinnerbone.weatherapi.base.Feature;
 import com.unrealdinnerbone.weatherapi.base.FeatureCollection;
@@ -13,11 +15,8 @@ import com.unrealdinnerbone.weatherapi.base.properties.Alert;
 import io.javalin.Javalin;
 import org.slf4j.Logger;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -25,16 +24,14 @@ public class WeatherAPI {
 
     private static final Logger LOGGER = LogHelper.getLogger();
 
-    private static final Cache<String, String> pages = CacheBuilder.newBuilder()
-            .expireAfterWrite(5, TimeUnit.MINUTES)
-            .build();
+    private static final ApiConfig API_CONFIG = ConfigManager.createSimpleEnvPropertyConfigManger().loadConfig("weather_api", ApiConfig::new);
+
+    private static final Cache<String, AlertData> API_CACHE = CacheBuilder.newBuilder()
+            .expireAfterWrite(API_CONFIG.getCacheTime(), TimeUnit.SECONDS).build();
 
     private static final List<String> TYPES = new ArrayList<>();
     private static final List<String> ALERT_TYPES = new ArrayList<>();
-
     private static final List<String> ZONES = new ArrayList<>();
-
-    private static final Map<String, String> WEATHER_ZONES = new HashMap<>();
 
     static {
         TYPES.add("BlizzardWarning");
@@ -73,91 +70,78 @@ public class WeatherAPI {
         ALERT_TYPES.add("WinterStorm");
 
         ZONES.addAll(Arrays.asList(System.getenv().getOrDefault("ZONES", "").split(",")));
+        ZONES.add("ILZ103");
         ZONES.removeIf(String::isEmpty);
     }
 
 
-    private static final HttpClient httpClient = HttpClient.newBuilder().version(HttpClient.Version.HTTP_2).build();
-
-
     public static void main(String[] args) {
-        LOGGER.info("Starting WeatherAPI");
-        Javalin app = Javalin.create(javalinConfig -> {
-            javalinConfig.showJavalinBanner = false;
-        }).start(1001);
-        TaskScheduler.scheduleRepeatingTask(5, TimeUnit.MINUTES, (task) -> updateWeather());
+        LOGGER.info("Starting WeatherAPI Wrapper");
+        Javalin app = Javalin.create(javalinConfig -> javalinConfig.showJavalinBanner = false).start(1001);
         app.get("v1/alerts/{zone}", ctx -> {
             String zone = ctx.pathParam("zone");
             if(!zone.isEmpty()) {
-                if(WEATHER_ZONES.containsKey(zone)) {
-                    ctx.result(WEATHER_ZONES.get(zone));
+                if(ZONES.contains(zone)) {
+                    ctx.result(JsonUtil.DEFAULT.toJson(getZoneDataFromCache(zone)));
                 }else {
-                    ctx.result(JsonUtil.DEFAULT.toJson(AlertData.class, new AlertData(TYPES.stream().collect(Collectors.toMap(type -> type, type -> false)),  ALERT_TYPES.stream().collect(Collectors.toMap(type -> type, type -> Level.NONE)))));
+                    ctx.status(404);
                 }
             }else {
                 ctx.result("No Zone");
             }
         });
-
-
     }
 
-    public static void updateWeather() {
-        LOGGER.info("Updating Weather");
-        for (String zone : ZONES) {
-            AlertData alertData = getAlertData(zone);
-            if(alertData != null) {
-                String json = JsonUtil.DEFAULT.toFancyJson(AlertData.class, alertData);
-                LOGGER.info("Updating Zone: {} with Data: {}", zone, json);
-                WEATHER_ZONES.put(zone, json);
-            }
-        }
-    }
-
-
-    public static AlertData getAlertData(String zone) {
-        HttpRequest request = HttpRequest.newBuilder()
-                .setHeader("User-Agent", "WeatherAPI-Wrapper (unrealdinnerbone@gmail.com)")
-                .GET().uri(URI.create("https://api.weather.gov/alerts/active?zone=" + zone)).build();
+    private static AlertData getZoneDataFromCache(String zoneId) {
         try {
-            String response = httpClient.send(request, HttpResponse.BodyHandlers.ofString()).body();
-            LOGGER.info("Response  Null ? {}", response == null || response.isEmpty());
-            FeatureCollection alertFeatureCollection = JsonUtil.DEFAULT.parse(FeatureCollection.class, response);
-            List<String> activeAlerts = alertFeatureCollection.features().stream()
-                    .map(Feature::properties)
-                    .map(Alert::event)
-                    .map(StringUtils::toCamelCase)
-                    .toList();
-
-            Map<String, Level> levelMap = new HashMap<>();
-            for(String alertType : ALERT_TYPES) {
-                String warning = alertType + "Warning";
-                String watch = alertType + "Watch";
-                if(activeAlerts.contains(warning)) {
-                    levelMap.put(alertType, Level.WARNING);
-                } else if(activeAlerts.contains(watch)) {
-                    levelMap.put(alertType, Level.WATCH);
-                } else {
-                    levelMap.put(alertType, Level.NONE);
-                }
-            }
-            return new AlertData(TYPES.stream().collect(Collectors.toMap(type -> type, activeAlerts::contains, (a, b) -> b)), levelMap);
-        }catch(Exception e) {
-            LOGGER.error("Error while requesting alerts", e);
-            return null;
+            return API_CACHE.get(zoneId, () -> {
+                AlertData now = getAlertData(zoneId).getNow();
+                LOGGER.info("Got Data for Zone: {} at {} ", zoneId, now.updated());
+                return now;
+            });
+        } catch (ExecutionException e) {
+            return new AlertData(TYPES.stream().collect(Collectors.toMap(type -> type, type -> false)),  ALERT_TYPES.stream().collect(Collectors.toMap(type -> type, type -> Level.NONE)), "Error");
         }
     }
 
-    public static record AlertData(Map<String, Boolean> alerts, Map<String, Level> levels) {
+
+
+    public static IResult<AlertData> getAlertData(String zone) {
+        return APIUtils.get(FeatureCollection.class, "https://api.weather.gov/alerts/active?zone=" + zone, builder ->
+                        builder.setHeader("User-Agent", "WeatherAPI-Wrapper (" + API_CONFIG.getEmail() + ")"))
+                .map(featureCollection -> {
+                    List<String> activeAlerts = featureCollection.features().stream()
+                            .map(Feature::properties)
+                            .map(Alert::event)
+                            .map(StringUtils::toCamelCase)
+                            .toList();
+
+                    Map<String, Level> levelMap = new HashMap<>();
+                    for (String alertType : ALERT_TYPES) {
+                        String warning = alertType + "Warning";
+                        String watch = alertType + "Watch";
+                        if (activeAlerts.contains(warning)) {
+                            levelMap.put(alertType, Level.WARNING);
+                        } else if (activeAlerts.contains(watch)) {
+                            levelMap.put(alertType, Level.WATCH);
+                        } else {
+                            levelMap.put(alertType, Level.NONE);
+                        }
+                    }
+                    return new AlertData(TYPES.stream().collect(Collectors.toMap(type -> type, activeAlerts::contains, (a, b) -> b)), levelMap, featureCollection.updated());
+                });
+    }
+
+    public static record AlertData(Map<String, Boolean> alerts, Map<String, Level> levels, String updated) {
 
     }
 
     public enum Level {
-        @Json(name = "warning")
+        @SerializedName("warning")
         WARNING,
-        @Json(name = "watch")
+        @SerializedName("watch")
         WATCH,
-        @Json(name = "none")
+        @SerializedName("none")
         NONE
     }
 

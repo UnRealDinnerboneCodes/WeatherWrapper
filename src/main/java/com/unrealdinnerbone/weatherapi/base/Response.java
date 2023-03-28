@@ -1,25 +1,25 @@
 package com.unrealdinnerbone.weatherapi.base;
 
-import com.squareup.moshi.Json;
+import com.google.gson.annotations.SerializedName;
 
 public enum Response
 {
-    @Json(name = "Shelter")
+    @SerializedName("Shelter")
     SHELTER,
-    @Json(name = "Evacuate")
+    @SerializedName("Evacuate")
     EVACUATE,
-    @Json(name = "Prepare")
+    @SerializedName("Prepare")
     PREPARE,
-    @Json(name = "Execute")
+    @SerializedName("Execute")
     EXECUTE,
-    @Json(name = "Avoid")
+    @SerializedName("Avoid")
     AVOID,
-    @Json(name = "Monitor")
+    @SerializedName("Monitor")
     MONITOR,
-    @Json(name = "Assess")
+    @SerializedName("Assess")
     ASSESS,
-    @Json(name = "AllClear")
+    @SerializedName("AllClear")
     ALL_CLEAR,
-    @Json(name = "None")
+    @SerializedName("None")
     NONE;
 }

@@ -1,17 +1,17 @@
 package com.unrealdinnerbone.weatherapi.base;
 
-import com.squareup.moshi.Json;
+import com.google.gson.annotations.SerializedName;
 
 public enum Severity
 {
-    @Json(name = "Extreme")
+    @SerializedName("Extreme")
     EXTREME,
-    @Json(name = "Severe")
+    @SerializedName("Severe")
     SEVERE,
-    @Json(name = "Moderate")
+    @SerializedName("Moderate")
     MODERATE,
-    @Json(name = "Minor")
+    @SerializedName("Minor")
     MINOR,
-    @Json(name = "Unknown")
+    @SerializedName("Unknown")
     UNKNOWN;
 }

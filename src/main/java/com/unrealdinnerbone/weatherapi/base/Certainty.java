@@ -1,17 +1,17 @@
 package com.unrealdinnerbone.weatherapi.base;
 
-import com.squareup.moshi.Json;
+import com.google.gson.annotations.SerializedName;
 
 public enum Certainty
 {
-    @Json(name = "Observed")
+    @SerializedName("Observed")
     OBSERVED,
-    @Json(name = "Likely")
+    @SerializedName("Likely")
     LIKELY,
-    @Json(name = "Possible")
+    @SerializedName("Possible")
     POSSIBLE,
-    @Json(name = "Unlikely")
+    @SerializedName("Unlikely")
     UNLIKELY,
-    @Json(name = "Unknown")
+    @SerializedName("Unknown")
     UNKNOWN;
 }
