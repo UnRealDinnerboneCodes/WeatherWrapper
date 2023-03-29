@@ -1,4 +1,4 @@
-FROM gradle:7.3.1-jdk17 as builder
+FROM gradle:8.0.0-jdk19 as builder
 
 WORKDIR /build
 
@@ -9,7 +9,7 @@ COPY settings.gradle /build
 
 RUN gradle shadowJar
 
-FROM openjdk:17
+FROM openjdk:19-alpine
 COPY --from=builder "/build/build/libs/WeatherAPI-1.0.0+build.0-all.jar" WeatherWrapper-1.0.0-all.jar
 
 CMD ["java", "-jar", "WeatherWrapper-1.0.0-all.jar"]
