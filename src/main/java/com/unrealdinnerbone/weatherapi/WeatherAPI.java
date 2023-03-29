@@ -27,7 +27,7 @@ public class WeatherAPI {
     private static final ApiConfig API_CONFIG = ConfigManager.createSimpleEnvPropertyConfigManger().loadConfig("weather_api", ApiConfig::new);
 
     private static final Cache<String, AlertData> API_CACHE = CacheBuilder.newBuilder()
-            .expireAfterWrite(API_CONFIG.getCacheTime(), TimeUnit.SECONDS).build();
+            .expireAfterWrite(API_CONFIG.getCacheTime(), TimeUnit.MINUTES).build();
 
     private static final List<String> TYPES = new ArrayList<>();
     private static final List<String> ALERT_TYPES = new ArrayList<>();
