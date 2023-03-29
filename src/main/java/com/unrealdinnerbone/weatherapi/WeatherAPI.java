@@ -4,6 +4,8 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.gson.annotations.SerializedName;
 import com.unrealdinnerbone.config.ConfigManager;
+import com.unrealdinnerbone.javalinutils.InfluxConfig;
+import com.unrealdinnerbone.javalinutils.InfluxPlugin;
 import com.unrealdinnerbone.unreallib.LogHelper;
 import com.unrealdinnerbone.unreallib.StringUtils;
 import com.unrealdinnerbone.unreallib.apiutils.APIUtils;
@@ -24,7 +26,14 @@ public class WeatherAPI {
 
     private static final Logger LOGGER = LogHelper.getLogger();
 
-    private static final ApiConfig API_CONFIG = ConfigManager.createSimpleEnvPropertyConfigManger().loadConfig("weather_api", ApiConfig::new);
+    private static final ApiConfig API_CONFIG;
+    private static final InfluxConfig INFLUX_CONFIG;
+
+    static {
+        ConfigManager simpleEnvPropertyConfigManger = ConfigManager.createSimpleEnvPropertyConfigManger();
+        API_CONFIG = simpleEnvPropertyConfigManger.loadConfig("weather_api", ApiConfig::new);
+        INFLUX_CONFIG = simpleEnvPropertyConfigManger.loadConfig("influx", InfluxConfig::new);
+    }
 
     private static final Cache<String, AlertData> API_CACHE = CacheBuilder.newBuilder()
             .expireAfterWrite(API_CONFIG.getCacheTime(), TimeUnit.MINUTES).build();
@@ -77,19 +86,27 @@ public class WeatherAPI {
 
     public static void main(String[] args) {
         LOGGER.info("Starting WeatherAPI Wrapper");
-        Javalin app = Javalin.create(javalinConfig -> javalinConfig.showJavalinBanner = false).start(1001);
+
+
+
+        Javalin app = Javalin.create(javalinConfig -> {
+            javalinConfig.plugins.register(new InfluxPlugin(INFLUX_CONFIG));
+            javalinConfig.showJavalinBanner = false;
+        }).start(1001);
+
         app.get("v1/alerts/{zone}", ctx -> {
             String zone = ctx.pathParam("zone");
-            if(!zone.isEmpty()) {
-                if(ZONES.contains(zone)) {
+            if (!zone.isEmpty()) {
+                if (ZONES.contains(zone)) {
                     ctx.result(JsonUtil.DEFAULT.toJson(getZoneDataFromCache(zone)));
-                }else {
+                } else {
                     ctx.status(404);
                 }
-            }else {
+            } else {
                 ctx.result("No Zone");
             }
         });
+
     }
 
     private static AlertData getZoneDataFromCache(String zoneId) {
