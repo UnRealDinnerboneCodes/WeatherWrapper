@@ -1,7 +1,8 @@
 package com.unrealdinnerbone.weatherapi;
 
-import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.gson.annotations.SerializedName;
 import com.unrealdinnerbone.config.ConfigManager;
 import com.unrealdinnerbone.javalinutils.InfluxConfig;
@@ -15,6 +16,7 @@ import com.unrealdinnerbone.weatherapi.base.Feature;
 import com.unrealdinnerbone.weatherapi.base.FeatureCollection;
 import com.unrealdinnerbone.weatherapi.base.properties.Alert;
 import io.javalin.Javalin;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 import java.util.*;
@@ -35,12 +37,20 @@ public class WeatherAPI {
         INFLUX_CONFIG = simpleEnvPropertyConfigManger.loadConfig("influx", InfluxConfig::new);
     }
 
-    private static final Cache<String, AlertData> API_CACHE = CacheBuilder.newBuilder()
-            .expireAfterWrite(API_CONFIG.getCacheTime(), TimeUnit.MINUTES).build();
+    private static final LoadingCache<String, AlertData> API_CACHE = CacheBuilder.newBuilder()
+            .expireAfterWrite(API_CONFIG.getCacheTime(), TimeUnit.MINUTES)
+            .build(new CacheLoader<>() {
+                @Override
+                @NotNull
+                public AlertData load(@NotNull String zoneId) {
+                    AlertData now = getAlertData(zoneId).getNow();
+                    LOGGER.info("Got Data for Zone: {} at {} ", zoneId, now.updated());
+                    return now;
+                }
+            });
 
     private static final List<String> TYPES = new ArrayList<>();
     private static final List<String> ALERT_TYPES = new ArrayList<>();
-    private static final List<String> ZONES = new ArrayList<>();
 
     static {
         TYPES.add("BlizzardWarning");
@@ -77,17 +87,11 @@ public class WeatherAPI {
         ALERT_TYPES.add("SevereThunderstorm");
         ALERT_TYPES.add("Tornado");
         ALERT_TYPES.add("WinterStorm");
-
-        ZONES.addAll(Arrays.asList(System.getenv().getOrDefault("ZONES", "").split(",")));
-        ZONES.add("ILZ103");
-        ZONES.removeIf(String::isEmpty);
     }
 
 
     public static void main(String[] args) {
         LOGGER.info("Starting WeatherAPI Wrapper");
-
-
 
         Javalin app = Javalin.create(javalinConfig -> {
             javalinConfig.plugins.register(new InfluxPlugin(INFLUX_CONFIG));
@@ -97,11 +101,7 @@ public class WeatherAPI {
         app.get("v1/alerts/{zone}", ctx -> {
             String zone = ctx.pathParam("zone");
             if (!zone.isEmpty()) {
-                if (ZONES.contains(zone)) {
-                    ctx.result(JsonUtil.DEFAULT.toJson(getZoneDataFromCache(zone)));
-                } else {
-                    ctx.status(404);
-                }
+                ctx.result(JsonUtil.DEFAULT.toJson(getZoneDataFromCache(zone)));
             } else {
                 ctx.result("No Zone");
             }
@@ -111,11 +111,7 @@ public class WeatherAPI {
 
     private static AlertData getZoneDataFromCache(String zoneId) {
         try {
-            return API_CACHE.get(zoneId, () -> {
-                AlertData now = getAlertData(zoneId).getNow();
-                LOGGER.info("Got Data for Zone: {} at {} ", zoneId, now.updated());
-                return now;
-            });
+            return API_CACHE.get(zoneId);
         } catch (ExecutionException e) {
             return new AlertData(TYPES.stream().collect(Collectors.toMap(type -> type, type -> false)),  ALERT_TYPES.stream().collect(Collectors.toMap(type -> type, type -> Level.NONE)), "Error");
         }
@@ -161,9 +157,6 @@ public class WeatherAPI {
         @SerializedName("none")
         NONE
     }
-
-
-
 
 }
 
