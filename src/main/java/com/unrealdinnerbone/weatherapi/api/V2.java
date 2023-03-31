@@ -9,6 +9,7 @@ import com.unrealdinnerbone.unreallib.json.JsonUtil;
 import com.unrealdinnerbone.weatherapi.ApiConfig;
 import com.unrealdinnerbone.weatherapi.base.Feature;
 import com.unrealdinnerbone.weatherapi.base.FeatureCollection;
+import com.unrealdinnerbone.weatherapi.base.MessageType;
 import com.unrealdinnerbone.weatherapi.base.properties.Alert;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
@@ -55,9 +56,17 @@ public class V2
 
     private IResult<AlertResponse> mapFeatureCollectionToAlertResponse(IResult<FeatureCollection> featureCollectionIResult) {
         return featureCollectionIResult.map(featureCollection -> {
-            List<String> activeAlerts = featureCollection
+            List<Alert> activeAlerts = featureCollection
                     .features().stream()
                     .map(Feature::properties)
+                    .filter(alert -> alert.messageType() == MessageType.ALERT || alert.messageType() == MessageType.UPDATE)
+                    .toList();
+
+            String message = activeAlerts.stream()
+                    .map(Alert::headline)
+                    .collect(Collectors.joining(" "));
+
+            List<String> activeNames = activeAlerts.stream()
                     .map(Alert::event)
                     .map(StringUtils::toCamelCase)
                     .toList();
@@ -66,15 +75,17 @@ public class V2
             for (AlertType alertType : AlertType.REGISTRY.getValues()) {
                 String warning = alertType.name() + "Warning";
                 String watch = alertType.name() + "Watch";
-                if (activeAlerts.contains(warning)) {
+                if (activeNames.contains(warning)) {
                     levelMap.put(alertType, Level.WARNING);
-                } else if (activeAlerts.contains(watch)) {
-                    levelMap.put(alertType, Level.WATCH);
+                } else if (activeNames.contains(watch)) {
+                    if(levelMap.get(alertType) != Level.WARNING) {
+                        levelMap.put(alertType, Level.WATCH);
+                    }
                 } else {
-                    levelMap.put(alertType, Level.NONE);
+                    levelMap.putIfAbsent(alertType, Level.NONE);
                 }
             }
-            return AlertResponse.response(featureCollection.updated(), featureCollection.title(), levelMap);
+            return AlertResponse.response(featureCollection.updated(), featureCollection.title(), message, levelMap);
         });
     }
 
@@ -85,7 +96,8 @@ public class V2
 
     @NotNull
     private IResult<FeatureCollection> getAlertsByPoint(String longitude, String latitude) {
-        return APIUtils.get(FeatureCollection.class, "https://api.weather.gov/alerts?point=" + longitude + "," + latitude);
+        String s = ("https://api.weather.gov/alerts?point=" + longitude + "," + latitude);
+        return APIUtils.get(FeatureCollection.class, s);
     }
 
     private IResult<FeatureCollection> getAlertsByPoint(String key) {
@@ -93,13 +105,13 @@ public class V2
         return getAlertsByPoint(split[0], split[1]);
     }
 
-    public record AlertResponse(String updated, String message, Map<String, Level> levels) {
+    public record AlertResponse(String updated, String message, String info, Map<String, Level> levels) {
         public static AlertResponse error(String message) {
-            return response("1969-01-01T00:00:00+00:00", message, EMPTY_MAP.get());
+            return response("1969-01-01T00:00:00+00:00", message, "No Info", EMPTY_MAP.get());
         }
 
-        public static AlertResponse response(String updated, String message, Map<AlertType, Level> levels) {
-            return new AlertResponse(updated, message, levels.entrySet().stream().collect(Collectors.toMap(entry -> entry.getKey().name(), Map.Entry::getValue)));
+        public static AlertResponse response(String updated, String message, String info, Map<AlertType, Level> levels) {
+            return new AlertResponse(updated, message, info, levels.entrySet().stream().collect(Collectors.toMap(entry -> entry.getKey().name(), Map.Entry::getValue)));
         }
     }
 }
