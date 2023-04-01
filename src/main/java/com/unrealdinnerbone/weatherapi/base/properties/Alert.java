@@ -2,6 +2,7 @@ package com.unrealdinnerbone.weatherapi.base.properties;
 
 import com.unrealdinnerbone.weatherapi.base.*;
 
+import java.time.Instant;
 import java.util.List;
 
 public record Alert(String id,
@@ -9,11 +10,11 @@ public record Alert(String id,
                     Geocode geocode,
                     List<String> affectedZones,
                     List<Reference> references,
-                    String sent,
-                    String effective,
-                    String onset,
-                    String expires,
-                    String ends,
+                    Instant sent,
+                    Instant effective,
+                    Instant onset,
+                    Instant expires,
+                    Instant ends,
                     Status status,
                     MessageType messageType,
                     String category,

@@ -62,6 +62,7 @@ public class V2
                     .filter(alert -> alert.messageType() == MessageType.ALERT || alert.messageType() == MessageType.UPDATE)
                     .toList();
 
+
             String message = activeAlerts.stream()
                     .map(Alert::headline)
                     .collect(Collectors.joining(" "));
@@ -78,11 +79,9 @@ public class V2
                 if (activeNames.contains(warning)) {
                     levelMap.put(alertType, Level.WARNING);
                 } else if (activeNames.contains(watch)) {
-                    if(levelMap.get(alertType) != Level.WARNING) {
-                        levelMap.put(alertType, Level.WATCH);
-                    }
+                    levelMap.put(alertType, Level.WATCH);
                 } else {
-                    levelMap.putIfAbsent(alertType, Level.NONE);
+                    levelMap.put(alertType, Level.NONE);
                 }
             }
             return AlertResponse.response(featureCollection.updated(), featureCollection.title(), message, levelMap);
@@ -91,12 +90,12 @@ public class V2
 
     @NotNull
     private IResult<FeatureCollection> getAlertsByZone(String zone) {
-        return APIUtils.get(FeatureCollection.class, "https://api.weather.gov/alerts?zone=" + zone);
+        return APIUtils.get(FeatureCollection.class, "https://api.weather.gov/alerts/active?zone=" + zone);
     }
 
     @NotNull
     private IResult<FeatureCollection> getAlertsByPoint(String longitude, String latitude) {
-        String s = ("https://api.weather.gov/alerts?point=" + longitude + "," + latitude);
+        String s = ("https://api.weather.gov/alerts/active?point=" + longitude + "," + latitude);
         return APIUtils.get(FeatureCollection.class, s);
     }
 
