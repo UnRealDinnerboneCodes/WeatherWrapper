@@ -5,6 +5,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.unrealdinnerbone.unreallib.StringUtils;
 import com.unrealdinnerbone.unreallib.apiutils.APIUtils;
 import com.unrealdinnerbone.unreallib.apiutils.IResult;
+import com.unrealdinnerbone.unreallib.apiutils.ResponseData;
 import com.unrealdinnerbone.unreallib.json.JsonUtil;
 import com.unrealdinnerbone.weatherapi.ApiConfig;
 import com.unrealdinnerbone.weatherapi.base.Feature;
@@ -23,19 +24,19 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class V2
-{
+public class V2 {
 
     private static final Supplier<Map<AlertType, Level>> EMPTY_MAP = () -> AlertType.REGISTRY.getValues().stream().collect(Collectors.toMap(alertType -> alertType, alertType -> Level.NONE, (a, b) -> b));
 
     private final AsyncLoadingCache<String, String> zoneAlertCache;
     private final AsyncLoadingCache<String, String> pointAlertCache;
+
     public V2(Javalin app, ApiConfig apiConfig) {
         zoneAlertCache = Caffeine.newBuilder()
-                .expireAfterWrite(apiConfig.getCacheTime(), TimeUnit.MINUTES)
+                .expireAfterWrite(apiConfig.getCacheTime(), TimeUnit.SECONDS)
                 .buildAsync((key, executor) -> mapToString(mapFeatureCollectionToAlertResponse(getAlertsByZone(key))).get());
-        pointAlertCache =  Caffeine.newBuilder()
-                .expireAfterWrite(apiConfig.getCacheTime(), TimeUnit.MINUTES)
+        pointAlertCache = Caffeine.newBuilder()
+                .expireAfterWrite(apiConfig.getCacheTime(), TimeUnit.SECONDS)
                 .buildAsync((key, executor) -> mapToString(mapFeatureCollectionToAlertResponse(getAlertsByPoint(key))).get());
         app.get("/v2/alerts/zone/{zone}", ctx -> ctx.future(getFutureSupplier(ctx.pathParam("zone"), ctx, zoneAlertCache)));
         app.get("/v2/alerts/point/{long}/{lat}", ctx -> ctx.future(getFutureSupplier(ctx.pathParam("long") + "," + ctx.pathParam("lat"), ctx, pointAlertCache)));
@@ -90,13 +91,15 @@ public class V2
 
     @NotNull
     private IResult<FeatureCollection> getAlertsByZone(String zone) {
-        return APIUtils.get(FeatureCollection.class, "https://api.weather.gov/alerts/active?zone=" + zone);
+        return APIUtils.get(FeatureCollection.class, "https://api.weather.gov/alerts/active?zone=" + zone)
+                .map(ResponseData::data);
     }
 
     @NotNull
     private IResult<FeatureCollection> getAlertsByPoint(String longitude, String latitude) {
         String s = ("https://api.weather.gov/alerts/active?point=" + longitude + "," + latitude);
-        return APIUtils.get(FeatureCollection.class, s);
+        //            featureCollectionResponseData.headers().forEach((s1, s2) -> System.out.println(s1 + " " + s2));
+        return APIUtils.get(FeatureCollection.class, s).map(ResponseData::data);
     }
 
     private IResult<FeatureCollection> getAlertsByPoint(String key) {
@@ -104,13 +107,13 @@ public class V2
         return getAlertsByPoint(split[0], split[1]);
     }
 
-    public record AlertResponse(String updated, String message, String info, Map<String, Level> levels) {
+    public record AlertResponse(String updated, String message, String info, Map<AlertType, Level> levels) {
         public static AlertResponse error(String message) {
             return response("1969-01-01T00:00:00+00:00", message, "No Info", EMPTY_MAP.get());
         }
 
         public static AlertResponse response(String updated, String message, String info, Map<AlertType, Level> levels) {
-            return new AlertResponse(updated, message, info, levels.entrySet().stream().collect(Collectors.toMap(entry -> entry.getKey().name(), Map.Entry::getValue)));
+            return new AlertResponse(updated, message, info, levels);
         }
     }
 }

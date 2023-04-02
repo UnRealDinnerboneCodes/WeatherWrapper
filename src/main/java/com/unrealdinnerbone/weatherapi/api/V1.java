@@ -6,6 +6,7 @@ import com.unrealdinnerbone.unreallib.LogHelper;
 import com.unrealdinnerbone.unreallib.StringUtils;
 import com.unrealdinnerbone.unreallib.apiutils.APIUtils;
 import com.unrealdinnerbone.unreallib.apiutils.IResult;
+import com.unrealdinnerbone.unreallib.apiutils.ResponseData;
 import com.unrealdinnerbone.unreallib.json.JsonUtil;
 import com.unrealdinnerbone.weatherapi.ApiConfig;
 import com.unrealdinnerbone.weatherapi.base.Feature;
@@ -102,6 +103,7 @@ public class V1
     private IResult<AlertData> getAlertData(String zone, ApiConfig config) {
         return APIUtils.get(FeatureCollection.class, "https://api.weather.gov/alerts/active?zone=" + zone, builder ->
                         builder.setHeader("User-Agent", "WeatherAPI-Wrapper (" + config.getEmail() + ")"))
+                .map(ResponseData::data)
                 .map(featureCollection -> {
                     List<String> activeAlerts = featureCollection.features().stream()
                             .map(Feature::properties)

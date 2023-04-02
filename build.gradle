@@ -9,7 +9,7 @@ apply from: 'https://raw.githubusercontent.com/UnRealDinnerbone/GradleHelpers/he
 apply from: 'https://raw.githubusercontent.com/UnRealDinnerbone/GradleHelpers/helpers/shade.gradle'
 
 dependencies {
-    shade('com.unrealdinnerbone:UnRealLib:7.0.0+build.150')
+    shade('com.unrealdinnerbone:UnRealLib:7.0.0+build.152')
     shade "com.unrealdinnerbone:UnRealConfig:8.0.0+build.49"
     shade("com.github.ben-manes.caffeine:caffeine:3.1.5")
     shade "com.unrealdinnerbone:JavalinUtils:1.0.0+build.6"
