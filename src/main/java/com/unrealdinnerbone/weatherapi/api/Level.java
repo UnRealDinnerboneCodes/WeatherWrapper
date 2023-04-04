@@ -5,11 +5,22 @@ import com.google.gson.annotations.SerializedName;
 public enum Level {
 
     @SerializedName("advisory")
-    ADVISORY,
+    ADVISORY("yellow"),
     @SerializedName("warning")
-    WARNING,
+    WARNING("red"),
     @SerializedName("watch")
-    WATCH,
+    WATCH("orange"),
     @SerializedName("none")
-    NONE
+    NONE("gray")
+    ;
+
+    private final String color;
+
+    Level(String color) {
+        this.color = color;
+    }
+
+    public String getColor() {
+        return color;
+    }
 }

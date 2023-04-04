@@ -110,7 +110,7 @@ public class V2 {
                                 instruction.set(alert.instruction());
                                 headline.set(alert.headline());
                             });
-                    alertInfoMap.put(key, new AlertInfo(expires.get(), description.get(), instruction.get(), headline.get(), value));
+                    alertInfoMap.put(key, new AlertInfo(expires.get(), description.get(), instruction.get(), headline.get(), value, value.getColor()));
             }
             return AlertResponse.response(featureCollection.updated(), featureCollection.title(), message, levelMap, alertInfoMap);
         });
@@ -144,6 +144,6 @@ public class V2 {
         }
     }
 
-    public record AlertInfo(String expires, String description, String instruction, String headline, Level level) {
+    public record AlertInfo(String expires, String description, String instruction, String headline, Level level, String color) {
     }
 }
