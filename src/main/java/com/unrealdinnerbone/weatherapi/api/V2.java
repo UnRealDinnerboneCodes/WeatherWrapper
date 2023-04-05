@@ -7,6 +7,7 @@ import com.unrealdinnerbone.unreallib.apiutils.APIUtils;
 import com.unrealdinnerbone.unreallib.apiutils.IResult;
 import com.unrealdinnerbone.unreallib.apiutils.ResponseData;
 import com.unrealdinnerbone.unreallib.json.JsonUtil;
+import com.unrealdinnerbone.unreallib.list.Maps;
 import com.unrealdinnerbone.weatherapi.ApiConfig;
 import com.unrealdinnerbone.weatherapi.base.Feature;
 import com.unrealdinnerbone.weatherapi.base.FeatureCollection;
@@ -18,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -134,13 +136,17 @@ public class V2 {
         return getAlertsByPoint(split[0], split[1]);
     }
 
-    public record AlertResponse(String updated, String message, String info, Map<AlertType, Level> levels, Map<AlertType, AlertInfo> alertInfo) {
+    public record AlertResponse(String updated, String message, String info, Map<AlertType, Level> levels, Map<Level, List<AlertType>> types, Map<AlertType, AlertInfo> alertInfo) {
         public static AlertResponse error(String message) {
             return response("1969-01-01T00:00:00+00:00", message, "No Info", EMPTY_MAP.get() , new HashMap<>());
         }
 
         public static AlertResponse response(String updated, String message, String info, Map<AlertType, Level> levels, Map<AlertType, AlertInfo> alertInfo) {
-            return new AlertResponse(updated, message, info, levels, alertInfo);
+            Map<Level, List<AlertType>> byType = new HashMap<>();
+            for (Map.Entry<AlertType, Level> entry : levels.entrySet()) {
+                Maps.putIfAbsent(byType, entry.getValue(), new ArrayList<>()).add(entry.getKey());
+            }
+            return new AlertResponse(updated, message, info, levels, byType, alertInfo);
         }
     }
 
