@@ -80,16 +80,15 @@ public class V2 {
                     .toList();
             Map<AlertType, AlertInfo> alertInfoMap = new HashMap<>();
             Map<AlertType, Level> levelMap = new HashMap<>();
-            alertLoop:
             for (AlertType alertType : AlertType.REGISTRY.getValues()) {
                 for (Level value : Level.values()) {
                     String name = alertType.name() + StringUtils.capitalizeFirstLetter(value.name());
                     if(activeNames.contains(name)) {
                         levelMap.put(alertType, value);
-                        break alertLoop;
+                        break;
                     }
                 }
-                levelMap.put(alertType, Level.NONE);
+                levelMap.putIfAbsent(alertType, Level.NONE);
             }
             for (Map.Entry<AlertType, Level> alertTypeLevelEntry : levelMap.entrySet()) {
                 AlertType key = alertTypeLevelEntry.getKey();
@@ -99,12 +98,7 @@ public class V2 {
                 AtomicReference<String> instruction = new AtomicReference<>("");
                 AtomicReference<String> headline = new AtomicReference<>("");
                     activeAlerts.stream()
-                            .filter(alert -> {
-                                String event = alert.event();
-                                String name = (key.name() + StringUtils.capitalizeFirstLetter(value.name()));
-                                boolean equals = StringUtils.toCamelCase(event).equals(name);
-                                return equals;
-                            })
+                            .filter(alert -> StringUtils.toCamelCase( alert.event()).equals((key.name() + StringUtils.capitalizeFirstLetter(value.name()))))
                             .findFirst()
                             .ifPresent(alert -> {
                                 expires.set(alert.expires().atZone(ZoneId.systemDefault()).format(FORMATTER));
@@ -136,7 +130,8 @@ public class V2 {
         return getAlertsByPoint(split[0], split[1]);
     }
 
-    public record AlertResponse(String updated, String message, String info, Map<AlertType, Level> levels, Map<Level, List<AlertType>> types, Map<AlertType, AlertInfo> alertInfo) {
+    public record AlertData(String message, String info, Map<AlertType, Level> levels, Map<Level, List<AlertType>> types, Map<AlertType, AlertInfo> alertInfo) {}
+    public record AlertResponse(String updated, AlertData data) {
         public static AlertResponse error(String message) {
             return response("1969-01-01T00:00:00+00:00", message, "No Info", EMPTY_MAP.get() , new HashMap<>());
         }
@@ -146,7 +141,7 @@ public class V2 {
             for (Map.Entry<AlertType, Level> entry : levels.entrySet()) {
                 Maps.putIfAbsent(byType, entry.getValue(), new ArrayList<>()).add(entry.getKey());
             }
-            return new AlertResponse(updated, message, info, levels, byType, alertInfo);
+            return new AlertResponse(updated, new AlertData(message, info, levels, byType, alertInfo));
         }
     }
 
