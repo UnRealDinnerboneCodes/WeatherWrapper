@@ -24,7 +24,7 @@ public class OfficeEventManger {
         TaskScheduler.scheduleRepeatingTask(12, TimeUnit.HOURS, task -> {
             HashSet<Headline> newHeadlines = new HashSet<>();
             List<PostgresConsumer> consumers = new ArrayList<>();
-            String query = "insert into events.event (id, office, important, issuance_time, link, name, title, summary, content) VALUES (?, ?, ?, ?, ?, ?, ?, ?) on conflict do update";
+            String query = "insert into events.event (id, office, important, issuance_time, link, name, title, summary, content) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) on conflict do update";
             for (Office value : Office.REGISTRY) {
                 for (Headline headline : GovApi.getHeadlines(value.name()).getNow().headlines()) {
                     consumers.add(preparedStatement -> {

@@ -46,7 +46,7 @@ public class Alerts implements IPage {
     }
 
     public static CompletableFuture<String> getPointResponse(String lat, String lon) {
-        return new Alerts().zoneAlertCache.get(lat + "," + lon);
+        return new Alerts().pointAlertCache.get(lat + "," + lon);
     }
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("E MMM dd HH:mm K");
 
