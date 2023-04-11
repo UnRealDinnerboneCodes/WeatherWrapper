@@ -7,6 +7,7 @@ import com.unrealdinnerbone.postgresslib.PostgresConfig;
 import com.unrealdinnerbone.postgresslib.PostgressHandler;
 import com.unrealdinnerbone.unreallib.LogHelper;
 import com.unrealdinnerbone.unreallib.ShutdownUtils;
+import com.unrealdinnerbone.weather.gov.api.alert.Urgency;
 import com.unrealdinnerbone.weather.managers.OfficeEventManger;
 import com.unrealdinnerbone.weather.versions.v2.Version2;
 import io.javalin.Javalin;
@@ -24,6 +25,7 @@ public class WeatherAPI {
     public static PostgressHandler POSTGRESS_HANDLER;
 
     static {
+        Urgency.REGISTRY.allowJsonCreation();
         ConfigManager simpleEnvPropertyConfigManger = ConfigManager.createSimpleEnvPropertyConfigManger();
         API_CONFIG = simpleEnvPropertyConfigManger.loadConfig("weather_api", ApiConfig::new);
         INFLUX_CONFIG = simpleEnvPropertyConfigManger.loadConfig("influx", InfluxConfig::new);

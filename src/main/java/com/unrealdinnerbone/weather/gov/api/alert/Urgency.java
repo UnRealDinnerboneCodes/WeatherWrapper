@@ -1,10 +1,9 @@
 package com.unrealdinnerbone.weather.gov.api.alert;
 
-import com.unrealdinnerbone.unreallib.json.api.INamed;
 import com.unrealdinnerbone.unreallib.json.api.JsonRegistry;
 
-public record Urgency(String name) implements INamed {
-    public static final JsonRegistry<Urgency> REGISTRY = JsonRegistry.of(Urgency.class, Urgency::new);
+public record Urgency(String name, boolean reg) {
+    public static final JsonRegistry<Urgency> REGISTRY = new JsonRegistry<>(Urgency::new, Urgency::name, Urgency.class, false);
 
     public static final Urgency IMMEDIATE = REGISTRY.register("Immediate");
     public static final Urgency EXPECTED = REGISTRY.register("Expected");
