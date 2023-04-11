@@ -1,4 +1,4 @@
-package com.unrealdinnerbone.weatherapi.api;
+package com.unrealdinnerbone.weather.api;
 
 import com.unrealdinnerbone.unreallib.json.api.JsonRegistry;
 
