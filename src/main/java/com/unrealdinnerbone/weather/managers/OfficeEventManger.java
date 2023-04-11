@@ -24,7 +24,7 @@ public class OfficeEventManger {
         TaskScheduler.scheduleRepeatingTask(12, TimeUnit.HOURS, task -> {
             HashSet<Headline> newHeadlines = new HashSet<>();
             List<PostgresConsumer> consumers = new ArrayList<>();
-            String query = "insert into events.event (id, office, important, issuance_time, link, name, title, summary, content) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) on conflict do update";
+            String query = "insert into events.event (id, office, important, issuance_time, link, name, title, summary, content) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET office = ?, important = ?, issuance_time = ?, link = ?, name = ?, title = ?, summary = ?, content = ?";
             for (Office value : Office.REGISTRY) {
                 for (Headline headline : GovApi.getHeadlines(value.name()).getNow().headlines()) {
                     consumers.add(preparedStatement -> {
@@ -36,8 +36,17 @@ public class OfficeEventManger {
                         preparedStatement.setString(6, headline.name());
                         preparedStatement.setString(7, headline.title());
                         preparedStatement.setString(8, headline.summary());
-
                         preparedStatement.setString(9, headline.content());
+
+                        preparedStatement.setString(10, value.name());
+                        preparedStatement.setBoolean(11, headline.important());
+                        preparedStatement.setTimestamp(12, Timestamp.from(headline.issuanceTime()));
+                        preparedStatement.setString(13, headline.link());
+                        preparedStatement.setString(14, headline.name());
+                        preparedStatement.setString(15, headline.title());
+                        preparedStatement.setString(16, headline.summary());
+                        preparedStatement.setString(17, headline.content());
+
                     });
                 }
                 LOGGER.info("Found {} events for {}", consumers.size(), value.name());
