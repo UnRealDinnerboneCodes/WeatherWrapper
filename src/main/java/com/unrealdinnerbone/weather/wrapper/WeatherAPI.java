@@ -1,8 +1,7 @@
 package com.unrealdinnerbone.weather.wrapper;
 
-import com.unrealdinnerbone.config.ConfigManager;
-import com.unrealdinnerbone.javalinutils.InfluxConfig;
-import com.unrealdinnerbone.javalinutils.InfluxPlugin;
+import com.unrealdinnerbone.config.api.exception.ConfigException;
+import com.unrealdinnerbone.config.impl.provider.EnvProvider;
 import com.unrealdinnerbone.postgresslib.PostgresConfig;
 import com.unrealdinnerbone.postgresslib.PostgressHandler;
 import com.unrealdinnerbone.unreallib.LogHelper;
@@ -20,16 +19,21 @@ public class WeatherAPI {
     private static final Logger LOGGER = LogHelper.getLogger();
 
     public static final ApiConfig API_CONFIG;
-    private static final InfluxConfig INFLUX_CONFIG;
 
     public static PostgressHandler POSTGRESS_HANDLER;
 
     static {
         Urgency.REGISTRY.allowJsonCreation();
-        ConfigManager simpleEnvPropertyConfigManger = ConfigManager.createSimpleEnvPropertyConfigManger();
-        API_CONFIG = simpleEnvPropertyConfigManger.loadConfig("weather_api", ApiConfig::new);
-        INFLUX_CONFIG = simpleEnvPropertyConfigManger.loadConfig("influx", InfluxConfig::new);
-        PostgresConfig postgresConfig = simpleEnvPropertyConfigManger.loadConfig("postgres", PostgresConfig::new);
+        EnvProvider<?> envProvider = new EnvProvider<>();
+        API_CONFIG = envProvider.loadConfig("weather_api", ApiConfig::new);
+        PostgresConfig postgresConfig = envProvider.loadConfig("postgres", PostgresConfig::new);
+        try {
+            envProvider.read();
+        } catch (ConfigException e) {
+            LOGGER.error("Error while reading config", e);
+            ShutdownUtils.shutdown();
+        }
+
         try {
             POSTGRESS_HANDLER = new PostgressHandler(postgresConfig);
             OfficeEventManger.init();
@@ -43,7 +47,6 @@ public class WeatherAPI {
         LOGGER.info("Starting WeatherAPI Wrapper");
 
         Javalin app = Javalin.create(javalinConfig -> {
-            javalinConfig.plugins.register(new InfluxPlugin(INFLUX_CONFIG));
             javalinConfig.showJavalinBanner = false;
         }).start(1001);
 

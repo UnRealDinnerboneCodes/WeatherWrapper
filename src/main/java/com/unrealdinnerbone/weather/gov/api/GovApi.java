@@ -1,8 +1,7 @@
 package com.unrealdinnerbone.weather.gov.api;
 
 import com.unrealdinnerbone.unreallib.apiutils.APIUtils;
-import com.unrealdinnerbone.unreallib.apiutils.IResult;
-import com.unrealdinnerbone.unreallib.apiutils.ResponseData;
+import com.unrealdinnerbone.unreallib.apiutils.result.IResult;
 import com.unrealdinnerbone.weather.gov.api.alert.FeatureCollection;
 import com.unrealdinnerbone.weather.gov.api.office.Headline;
 import com.unrealdinnerbone.weather.gov.api.office.Headlines;
@@ -42,7 +41,6 @@ public class GovApi
     }
 
     private static <T> IResult<T> get(Class<T> tClass, String url) {
-        return APIUtils.get(tClass, url, builder -> builder.setHeader("User-Agent", WeatherAPI.API_CONFIG.getEmail()))
-                .map(ResponseData::data);
+        return APIUtils.getJson(tClass, url, builder -> builder.setHeader("User-Agent", WeatherAPI.API_CONFIG.getEmail()));
     }
 }
