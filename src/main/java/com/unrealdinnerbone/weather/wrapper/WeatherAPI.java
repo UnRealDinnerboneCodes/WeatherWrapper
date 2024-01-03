@@ -26,7 +26,7 @@ public class WeatherAPI {
         Urgency.REGISTRY.allowJsonCreation();
         EnvProvider<?> envProvider = new EnvProvider<>();
         API_CONFIG = envProvider.loadConfig("weather_api", ApiConfig::new);
-        PostgresConfig postgresConfig = envProvider.loadConfig("postgres", PostgresConfig::new);
+//        PostgresConfig postgresConfig = envProvider.loadConfig("postgres", PostgresConfig::new);
         try {
             envProvider.read();
         } catch (ConfigException e) {
@@ -34,13 +34,13 @@ public class WeatherAPI {
             ShutdownUtils.shutdown();
         }
 
-        try {
-            POSTGRESS_HANDLER = new PostgressHandler(postgresConfig);
-            OfficeEventManger.init();
-        } catch (SQLException e) {
-            LOGGER.error("Error while creating PostgressHandler", e);
-            ShutdownUtils.shutdown();
-        }
+//        try {
+//            POSTGRESS_HANDLER = new PostgressHandler(postgresConfig);
+//            OfficeEventManger.init();
+//        } catch (SQLException e) {
+//            LOGGER.error("Error while creating PostgressHandler", e);
+//            ShutdownUtils.shutdown();
+//        }
     }
 
     public static void main(String[] args) {
