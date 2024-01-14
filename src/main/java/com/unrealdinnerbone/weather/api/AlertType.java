@@ -17,4 +17,6 @@ public record AlertType(String name, boolean isRegistered) {
     public static final AlertType FLOOD = REGISTRY.register("Flood");
     public static final AlertType FIRE_WEATHER = REGISTRY.register("FireWeather");
 
+    public static final AlertType WIND_CHILL = REGISTRY.register("WindChill");
+
 }
