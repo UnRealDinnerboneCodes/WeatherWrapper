@@ -2,16 +2,13 @@ package com.unrealdinnerbone.weather.wrapper;
 
 import com.unrealdinnerbone.config.api.exception.ConfigException;
 import com.unrealdinnerbone.config.impl.provider.EnvProvider;
-import com.unrealdinnerbone.postgresslib.PostgresConfig;
-import com.unrealdinnerbone.postgresslib.PostgressHandler;
 import com.unrealdinnerbone.unreallib.LogHelper;
 import com.unrealdinnerbone.unreallib.ShutdownUtils;
 import com.unrealdinnerbone.weather.gov.api.alert.Urgency;
 import com.unrealdinnerbone.weather.versions.v2.Version2;
+import com.unrealdinnerbone.weather.versions.v3.Version3;
 import io.javalin.Javalin;
 import org.slf4j.Logger;
-
-import java.sql.SQLException;
 
 public class WeatherAPI {
 
@@ -32,6 +29,7 @@ public class WeatherAPI {
             }).start(1001);
 
             new Version2(app);
+            new Version3(app);
         } catch (ConfigException e) {
             LOGGER.error("Error while reading config", e);
             ShutdownUtils.shutdown();

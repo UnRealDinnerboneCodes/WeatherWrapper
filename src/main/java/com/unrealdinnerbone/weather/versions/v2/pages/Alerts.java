@@ -52,7 +52,7 @@ public class Alerts implements IPage {
 
 
 
-    private static  IResult<AlertResponse> mapFeatureCollectionToAlertResponse(IResult<FeatureCollection> featureCollectionIResult) {
+    private static IResult<AlertResponse> mapFeatureCollectionToAlertResponse(IResult<FeatureCollection> featureCollectionIResult) {
         return featureCollectionIResult.map(featureCollection -> {
             List<Alert> activeAlerts = featureCollection
                     .features().stream()

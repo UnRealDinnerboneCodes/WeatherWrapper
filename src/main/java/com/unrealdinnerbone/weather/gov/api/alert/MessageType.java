@@ -10,7 +10,7 @@ public enum MessageType
     UPDATE,
     @SerializedName("Cancel")
     CANCEL,
-    @SerializedName("ACk")
+    @SerializedName("Ack")
     ACK,
     @SerializedName("Error")
     ERROR;
