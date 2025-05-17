@@ -10,6 +10,6 @@ RUN gradle shadowJar
 RUN ls -l /build/build/libs/
 
 FROM alpine/java:21
-COPY --from=builder "/build/build/libs/WeatherAPI-1.0.0-all.jar" WeatherWrapper-1.0.0-all.jar
+COPY --from=builder "/build/build/libs/build-1.0.0-all.jar" WeatherWrapper-1.0.0-all.jar
 
 CMD ["java", "-jar", "WeatherWrapper-1.0.0-all.jar"]
