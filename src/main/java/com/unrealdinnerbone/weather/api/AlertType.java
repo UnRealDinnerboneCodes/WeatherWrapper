@@ -33,7 +33,7 @@ public record AlertType(String name, boolean isRegistered) {
     public static final AlertType COASTAL_FLOOD = REGISTRY.register("CoastalFlood");
     public static final AlertType FLOOD = REGISTRY.register("Flood");
     public static final AlertType RIVER_FLOOD = REGISTRY.register("RiverFlood");
-    public static final AlertType EXCESSIVE_HEAT = REGISTRY.register("ExcessiveHeat");
+    public static final AlertType EXCESSIVE_HEAT = REGISTRY.register("ExtremeHeat");
     public static final AlertType HEAT = REGISTRY.register("Heat");
 
     public static final AlertType TROPICAL_STORM = REGISTRY.register("TropicalStorm");
